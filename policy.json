@@ -1,0 +1,108 @@
+{
+  "properties": {
+    "displayName": "Deny private DNS registration for Azure Databricks browser_authentication private endpoint",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Deny private DNS registration for Azure Databricks browser_authentication private endpoint",
+    "metadata": {
+      "category": "Network",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/privateEndpoints"
+              },
+              {
+                "count": {
+                  "field": "Microsoft.Network/privateEndpoints/privateLinkServiceConnections[*]",
+                  "where": {
+                    "count": {
+                      "field": "Microsoft.Network/privateEndpoints/privateLinkServiceConnections[*].groupIds[*]",
+                      "where": {
+                        "field": "Microsoft.Network/privateEndpoints/privateLinkServiceConnections[*].groupIds[*]",
+                        "equals": "browser_authentication"
+                      }
+                    },
+                    "greater": 0
+                  }
+                },
+                "greater": 0
+              },
+              {
+                "count": {
+                  "field": "Microsoft.Network/privateEndpoints/privateLinkServiceConnections[*]",
+                  "where": {
+                    "field": "Microsoft.Network/privateEndpoints/privateLinkServiceConnections[*].privateLinkServiceId",
+                    "contains": "Microsoft.Databricks/workspaces"
+                  }
+                },
+                "greater": 0
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups"
+              },
+              {
+                "count": {
+                  "field": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups/privateDnsZoneConfigs[*]",
+                  "where": {
+                    "field": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups/privateDnsZoneConfigs[*].privateDnsZoneId",
+                    "contains": "privatelink.azuredatabricks.net"
+                  }
+                },
+                "greater": 0
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "name",
+                    "contains": "browser"
+                  },
+                  {
+                    "field": "name",
+                    "contains": "auth"
+                  },
+                  {
+                    "field": "fullName",
+                    "contains": "browser"
+                  },
+                  {
+                    "field": "fullName",
+                    "contains": "auth"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}
