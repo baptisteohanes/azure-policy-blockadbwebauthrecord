@@ -24,7 +24,8 @@ The policy's `if` block fires on either of:
 
 ## Files
 
-- [policy.json](policy.json) — policy definition (mode `All`, default effect `Deny`).
+- [policy.json](policy.json) — denies the misconfiguration at the **private endpoint / DNS zone group** layer (mode `All`, default effect `Deny`).
+- [policy-dnszone.json](policy-dnszone.json) — denies any **A record** whose name contains `pl-auth` inside the `privatelink.azuredatabricks.net` private DNS zone (mode `All`, default effect `Deny`). Defense-in-depth complement to `policy.json`: catches manual or out-of-band record creation directly in the zone.
 
 ## Parameters
 

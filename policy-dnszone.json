@@ -1,0 +1,64 @@
+{
+  "properties": {
+    "displayName": "Deny pl-auth A records in privatelink.azuredatabricks.net private DNS zone",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Blocks creation of any A record whose name contains 'pl-auth' inside the privatelink.azuredatabricks.net private DNS zone. These records correspond to the Azure Databricks 'browser_authentication' (Web Auth) private endpoint, which must resolve through public DNS. Registering it privately breaks Entra ID single sign-on for the workspace UI.",
+    "metadata": {
+      "category": "Network",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      },
+      "recordNameToken": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Forbidden token in record name",
+          "description": "Substring that, when present in an A record name within the Databricks private DNS zone, triggers the effect. Defaults to 'pl-auth'."
+        },
+        "defaultValue": "pl-auth"
+      },
+      "zoneName": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Private DNS zone name",
+          "description": "Private DNS zone this policy applies to."
+        },
+        "defaultValue": "privatelink.azuredatabricks.net"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/privateDnsZones/A"
+          },
+          {
+            "value": "[last(split(field('fullName'), '/'))]",
+            "contains": "[parameters('recordNameToken')]"
+          },
+          {
+            "value": "[first(split(field('fullName'), '/'))]",
+            "equals": "[parameters('zoneName')]"
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}
